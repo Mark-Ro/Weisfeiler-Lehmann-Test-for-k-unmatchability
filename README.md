@@ -1,4 +1,4 @@
-This repository implements an RDF graph anonymization pipeline based on **k-Weisfeiler–Lehman (k-WL)** coloring.  
+This repository implements an RDF graph anonymization pipeline based on **Weisfeiler–Lehman** coloring.  
 It identifies which RDF nodes must remain **blank** (unlabeled) to guarantee *k-anonymity under structural equivalence* as defined by the WL color refinement algorithm.
 
 Both a **pure Python** and a **Cython-accelerated** backend are available.
