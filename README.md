@@ -49,7 +49,7 @@ git clone https://github.com/Mark-Ro/Weisfeiler-Lehmann-Test-for-k-unmatchabilit
 cd Weisfeiler-Lehmann-Test-for-k-unmatchability
 python -m venv venv
 source venv/bin/activate       # On Windows: venv\Scripts\activate
-pip install rdflib xxhash joblib setuptools wheel
+pip install rdflib xxhash joblib
 ```
 
 Run the main script:
