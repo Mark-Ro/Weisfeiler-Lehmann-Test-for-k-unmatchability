@@ -125,27 +125,36 @@ Run `main.py`, editing only the **USER-CONFIGURABLE PARAMETERS** block:
 
 ```python
 ###########################################################################
-# >>> USER-CONFIGURABLE PARAMETERS <<<                                    #
-###########################################################################
+    # >>> USER-CONFIGURABLE PARAMETERS <<<                                    #
+    # Modify only this section to adapt preprocessing to your dataset or task #
+    ###########################################################################
 
-file_path = "../inputs/Esempio 2 subject_in_uri.rdf"
-k = 2
+    file_path = "../inputs/Esempio 2 subject_in_uri.rdf"  # Path to the RDF input file
 
-incremental = False
-early_stop = False
-parallel = False
+    k = 2  # k-WL: every subject must belong to a WL color class of size >= k
 
-USE_CYTHON = False
-profiling = False
+    # EXECUTION STRATEGY
+    incremental = False  # If True, use incremental WL when testing each candidate blank
+    early_stop = False   # If True (and incremental=True), bound propagation by candidate's distance to any subject
+    parallel = False     # If True, verify candidates in parallel using joblib
 
-subject_as_concept = False
-subject_identifier = "subject"
 
-verbose = True
-max_seconds = 86400
-###########################################################################
-# >>> END USER-CONFIGURABLE SECTION <<<                                   #
-###########################################################################
+    # BACKEND SELECTION / BUILD
+    USE_CYTHON = False  # If True, use the Cython backend (much faster on large graphs)
+    profiling = False   # If True and USE_CYTHON, build Cython in profiling mode (slower but traceable)
+
+    # SUBJECT DETECTION (RDF)
+    subject_as_concept = False       # If True, subjects are selected by RDF type concept == subject_identifier. If False, a node is considered a subject only if its URI contains subject_identifier
+    subject_identifier = "subject"   # Concept label (if subject_as_concept) OR URI string to detect subjects
+
+    # RUNTIME / LOGGING
+    verbose = True     # Print progress and diagnostics to stdout
+    max_seconds = 86400  # Global time budget (in seconds) for preprocessing
+
+    ###########################################################################
+    # >>> END OF USER-CONFIGURABLE SECTION <<<                                #
+    # Do not edit below this line unless you know what you're doing.          #
+    ###########################################################################
 ```
 
 Results are stored automatically in a `results/` or `../results/` folder.
