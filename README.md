@@ -1,131 +1,200 @@
-This repository implements an RDF graph anonymization pipeline based on **Weisfeiler–Lehman** coloring.  
-It identifies which RDF nodes must remain **blank** (unlabeled) to guarantee *k-anonymity under structural equivalence* as defined by the WL color refinement algorithm.
+# Weisfeiler–Lehmann Test for k‑Unmatchability
 
-Both a **pure Python** and a **Cython-accelerated** backend are available.
+This repository implements a pipeline for RDF graph anonymization using **Weisfeiler–Lehman** coloring.  
+It identifies which RDF nodes must remain **blank** (unlabeled) to ensure **k‑anonymity** under structural equivalence induced by WL color refinement.
+
+It includes both a **pure Python** and a **Cython-accelerated** backend for performance.
 
 ---
 
 ## Features
 
 - **Weisfeiler–Lehman (WL) Coloring** for structural graph refinement  
-- **Incremental coloring** after local feature changes  
+- **Incremental refinement** when local changes occur  
 - **k-WL compliance checking** for anonymization guarantees  
 - **Parallel candidate verification** via Joblib  
 - **Cython backend** for high-performance execution  
-- **RDF graph parsing** with [RDFlib](https://github.com/RDFLib/rdflib)
+- **RDF graph parsing** using RDFlib
 
 ---
 
 ## Project Structure
 
 ```
-project/
-├── coloring.py           # WL refinement algorithms (Python backend)
-├── cy_wl.pyx             # Cython-optimized backend (compiled extension)
-├── compliance.py         # k-WL compliance checks and color partitioning
-├── graph_io.py           # RDF parser → compact graph representation
-├── utils.py              # BFS distance computation & feature serialization
-├── preprocessing.py      # Main WL preprocessing and anonymization logic
-├── parallel.py           # Parallel batch verification of candidate blanks
-├── hash.py               # Fast xxh3 64-bit hashing
-├── main.py               # Entry point for preprocessing
-├── run_tests.py          # Automated regression test suite
-├── setup.py              # Build script for the Cython backend
-└── inputs/               # Example RDF input files
+Weisfeiler‑Lehmann-Test-for-k-unmatchability/
+├── coloring.py
+├── cy_wl.pyx
+├── compliance.py
+├── graph_io.py
+├── utils.py
+├── preprocessing.py
+├── parallel.py
+├── hash.py
+├── main.py
+├── run_tests.py
+├── setup.py
+└── inputs/            # Example RDF files
 ```
 
 ---
 
 ## Installation
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/yourusername/wl-anonymizer.git
-cd wl-anonymizer
-```
+You can install and run this project in two modes: **pure Python** (no compilation) or **Cython** (fast, but requires a C compiler).
 
-### 2. Create and activate a Python environment
+### Option 1 — Quick setup (pure Python)
+
 ```bash
+git clone https://github.com/Mark-Ro/Weisfeiler-Lehmann-Test-for-k-unmatchability.git
+cd Weisfeiler-Lehmann-Test-for-k-unmatchability
 python -m venv venv
-source venv/bin/activate  # (or venv\Scripts\activate on Windows)
+source venv/bin/activate       # On Windows: venv\Scripts\activate
+pip install rdflib xxhash joblib setuptools wheel
 ```
 
-### 3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-If you don’t have a `requirements.txt`, install manually:
-```bash
-pip install rdflib xxhash joblib cython setuptools wheel
-```
-
----
-
-## Running the Main Script
-
-Run the preprocessing pipeline on an RDF example:
-
+Run the main script:
 ```bash
 python main.py
 ```
 
-Inside `main.py`, the configuration section is clearly marked:
+This uses the **Python-only backend**, no compilation required.
+
+---
+
+### Option 2 — Full setup with Cython backend
+
+```bash
+git clone https://github.com/Mark-Ro/Weisfeiler-Lehmann-Test-for-k-unmatchability.git
+cd Weisfeiler-Lehmann-Test-for-k-unmatchability
+python -m venv venv
+source venv/bin/activate
+pip install rdflib xxhash joblib cython setuptools wheel
+```
+
+#### Step 1 — Ensure a C/C++ compiler is installed
+
+Cython requires a working compiler to build the native extension.  
+Here's how to set that up:
+
+| Platform | Required toolchain | Installation hint |
+|----------|---------------------|--------------------|
+| **Windows** | Microsoft Visual C++ Build Tools | Install from Visual Studio Build Tools, selecting “C++ build tools”, ensure `cl.exe` is in PATH |
+| **Linux** | GCC/G++ (build-essential) | e.g. `sudo apt install build-essential` |
+| **macOS** | Apple Clang / Xcode CLI tools | Run `xcode-select --install` |
+
+---
+
+#### Step 2 — Build the Cython extension
+
+```bash
+python setup.py build_ext --inplace
+```
+
+This compiles `cy_wl.pyx` into a shared library:
+- `.so` on Linux/macOS  
+- `.pyd` on Windows  
+
+Alternatively, you can skip manual build: set `USE_CYTHON = True` in `main.py`, and the script will build the extension automatically if missing.
+
+---
+
+### Notes
+
+- **Required Python version:** 3.9 or newer  
+- **C/C++ compiler** is necessary *only* for building the Cython backend  
+- On **Windows**, install Visual C++ Build Tools for compilation  
+- For best performance on larger graphs, the Cython backend is strongly recommended
+
+---
+
+### Verify the setup
+
+Run the test suite:
+
+```bash
+python run_tests.py
+```
+
+It should pass for both Python and Cython backends (if compiled).
+
+---
+
+## Usage
+
+Run `main.py`, editing only the **USER-CONFIGURABLE PARAMETERS** block:
 
 ```python
 ###########################################################################
 # >>> USER-CONFIGURABLE PARAMETERS <<<                                    #
 ###########################################################################
 
-# ------------------------
-# INPUT / DATA PARAMETERS
-# ------------------------
-file_path = "../inputs/Esempio 2 subject_in_uri.rdf"  # Path to RDF input
+file_path = "../inputs/Esempio 2 subject_in_uri.rdf"
+k = 2
 
-# ------------------------
-# ANONYMIZATION REQUIREMENT
-# ------------------------
-k = 2  # k-WL: every subject must belong to a WL color class of size >= k
+incremental = False
+early_stop = False
+parallel = False
 
-# ------------------------
-# EXECUTION STRATEGY
-# ------------------------
-incremental = False  # If True, use incremental WL for each candidate blank
-early_stop = False   # If True (and incremental=True), limit propagation
-parallel = False     # Enable joblib-based parallel verification
+USE_CYTHON = False
+profiling = False
 
-# ------------------------
-# BACKEND SELECTION / BUILD
-# ------------------------
-USE_CYTHON = False  # If True, use the compiled Cython backend
-profiling = False   # Build Cython in profiling mode (for debugging)
+subject_as_concept = False
+subject_identifier = "subject"
 
-# ------------------------
-# SUBJECT DETECTION (RDF)
-# ------------------------
-subject_as_concept = False  # If True, subjects are selected by RDF type concept == subject_identifier.
-                            # If False, a node is considered a subject only if its URI contains the
-                            # substring given in subject_identifier (case-sensitive).
-subject_identifier = "subject"  # Concept label (if subject_as_concept) OR URI substring for subjects
-
-# ------------------------
-# RUNTIME / LOGGING
-# ------------------------
 verbose = True
 max_seconds = 86400
 ###########################################################################
-# >>> END OF USER-CONFIGURABLE SECTION <<<                                #
+# >>> END USER-CONFIGURABLE SECTION <<<                                   #
 ###########################################################################
 ```
 
-The script automatically saves results to `../results/`.
+Results are stored automatically in a `results/` or `../results/` folder.
 
+---
 
 ## Running the Test Suite
 
-The repository includes tests for all RDF examples and parameter combinations.
+The repository provides `run_tests.py` to verify correctness across multiple RDF inputs and parameter combinations:
 
-Run all tests:
 ```bash
 python run_tests.py
 ```
+
+---
+
+## Example Output
+
+A typical output looks like:
+
+```
+[Preprocessing] Final results:
+Number of necessary blanks: 3
+Number of singletons: 2
+Final necessary blanks: {'http://example.org/subject/s1', 'http://example.org/c4', ...}
+Singletons: {'http://example.org/c5', 'http://example.org/c3'}
+Results written to: ../results/Esempio 2 subject_in_uri.rdf_k=2_USE_CYTHON=False_...
+```
+
+---
+
+## Requirements
+
+- rdflib  
+- xxhash  
+- joblib  
+- cython  
+- setuptools  
+- wheel  
+
+You can produce a `requirements.txt` file:
+
+```
+rdflib
+xxhash
+joblib
+cython
+setuptools
+wheel
+```
+
+---
